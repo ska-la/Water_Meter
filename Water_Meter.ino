@@ -25,40 +25,32 @@ char sChart[PAD_ROWS][PAD_COLS] = {
 kPad kp = kPad((char *) sChart,PAD_ROWS,PAD_COLS);
 
 //--- пункты меню ---
-const prog_char iMenu1[] PROGMEM = {" 1.CONFIG"};
-const prog_char iMenu2[] PROGMEM = {" 2.PRE-DATA"};
-const prog_char iMenu3[] PROGMEM = {" 3.WORK"};
-const prog_char iMenu4[] PROGMEM = {" 4.POST-DATA"};
-const prog_char iMenu5[] PROGMEM = {" 5.CALCULATE"};
-const prog_char iMenu6[] PROGMEM = {" 6.RESET"};
+const prog_char iMenu1[] PROGMEM = {" 1.VOLUME CONFIG"};
+const prog_char iMenu2[] PROGMEM = {" 2.WORK"};
+/*const prog_char iMenu3[] PROGMEM = {" 3.CALCULATE"};
+const prog_char iMenu4[] PROGMEM = {" 4.RESET"};*/
+const prog_char iMenu3[] PROGMEM = {" 3.RESET"};
 
 //--- подменю (состоят из пунктов меню) ---
 const prog_char *sMenu1[] PROGMEM = {
   iMenu1,
   iMenu2,
-  iMenu3,
-  iMenu4,
-  iMenu5,
-  iMenu6
+  iMenu3
+//  iMenu4
 };
 
-int nMenu = 6;               //---------- количество пунктов меню
+//int nMenu = 4;               //---------- количество пунктов меню
+int nMenu = 3;               //---------- количество пунктов меню
 char vBuff[VSCREEN_WIDTH * SCREEN_HEIGHT];    //---------- видео буфер (40 символов x 2 строки или 20 символов х 4 строки) LCD
 
-//------------------------------------------------- Menu CONFIG strings ---------
-String pulseWeight[] = { "Input pulse weight:" , "m3/pulse" };
+//------------------------------------------------- Menu VOLUME CONFIG strings ---------
+String volumeConfig[] = { "Select Volume", "litres" };
 
 //------------------------------------------------- Menu WORK strings ---------
 String workMenu[] = { "m3/hour", "total Litres" };
 
-//------------------------------------------------- Menu PRE-DATA strings ---------
-String preDataInput = "Start value (m3)";
-
-//------------------------------------------------- Menu POST-DATA strings ---------
-String postDataInput = "Final value (m3)";
-
 //------------------------------------------------- Menu CALCULATE strings ---------
-String resultData = "Deviation:";
+String resultData = "Deviation (%):";
 
 //------------------------------------------------- Menu RESET strings ---------
 String clearAsk = "Clear all data?";
@@ -86,7 +78,6 @@ volatile unsigned long pulseCount = 0;
 volatile unsigned int pulsePerSecond = 0;
 
 //-------------------------------------- массив (импульсов/сек) предыдущих 5-ти секунд ------------
-//unsigned int pulseMass[] = {0,0,0,0,0};
 unsigned int pulseMass[SMOOTH_LENGTH] = {0};
 
 //----------------------------- вес импульса (м3) --------------
@@ -96,13 +87,15 @@ float floatPulse = String ( strPulse ).toFloat();
 //----------------------------- показания счётчика (м3) --------------
 char strValue[] = {"0.0000"};
 
-//-------------------------------- показания поверяемого счётчика -----------
-//-------------------------------- до и после измерения -----------
-float startValue = 0.0001;
-float finalValue = 0;
+//-------------------------------- измеряемый объём жидкости (м3) -----------
+float totalValue = 0.1;
+float deltaValue = 0.01;
 
 //------------------------------- пора перерисовать экран ----------
 volatile boolean reDraw = false;
+
+//------------------------------- пора вычислить отклонение ----------
+volatile byte startCount = 0;
 
 #define DELAY_AMOUNT 1000        //------- задержка в 1 секунду ---------
 unsigned long startDelay = 0;
@@ -114,6 +107,7 @@ void setup() {
   menu_init(menu_posi);
   pinMode( SER_IN, INPUT );
   pinMode( SER_OUT, OUTPUT );
+  pinMode( CONTROL_BUTTON, INPUT_PULLUP );
 //-------------------------------------------- прерывание от водомера на INT1 ------
 //  attachInterrupt(1,meter_interrupt,FALLING);
 }
@@ -136,6 +130,17 @@ void loop() {
 void meter_interrupt() {
   pulseCount++;
   pulsePerSecond++;
+  if ( digitalRead(CONTROL_BUTTON) == LOW && startCount == 2 ) {
+    startCount = 3;
+    detachInterrupt(0);
+  }
+  if ( digitalRead(CONTROL_BUTTON) == HIGH && startCount == 1 ) {
+    startCount = 2;
+    pulseCount = 0;
+  }
+  if ( digitalRead(CONTROL_BUTTON) == LOW && startCount == 0 ) {
+    startCount = 1;
+  }
 }
 
 /*
@@ -196,25 +201,18 @@ void preRunStr(void) {
 
 //-------------- вывод данных пунктов меню -----------
 void runStr(void) {
-//byte i = 0;
   if ( (isData & TST_STR_CH) != B00000000 ) {
     switch (menu_posi){
       case 0:
-        do_config();
+        do_volume_config();
         break;
       case 1:
-        do_preData();
-        break;
-      case 2:
         do_count();
         break;
-      case 3:
-        do_postData();
+      case 2:
+/*        do_calculate();
         break;
-      case 4:
-        do_calculate();
-        break;
-      case 5:
+      case 3:*/
         do_reset();
         break;
       default:

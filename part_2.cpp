@@ -124,10 +124,23 @@ void input_sel() {
 byte b_i_s = (byte) smbl & B00001111;
   switch(smbl) {
     case 'A':
-      p_move(0);
+      if ( inMenu ) {
+        if ( menu_posi == 0 ) {
+          totalValue += deltaValue;
+        }
+      } else {
+        p_move(0);
+      }
       break;
     case 'C':
-      p_move(1);
+      if ( inMenu ) {
+        if ( menu_posi == 0 ) {
+          if ( totalValue > 2 * deltaValue )
+            totalValue -= deltaValue;
+        }
+      } else {
+        p_move(1);
+      }
       break;
     case '1':
       p_to_i(b_i_s);
@@ -138,43 +151,28 @@ byte b_i_s = (byte) smbl & B00001111;
     case '3':
       p_to_i(b_i_s);
       break;
-    case '4':
-      p_to_i(b_i_s);
-      break;
-    case '5':
-      p_to_i(b_i_s);
-      break;
-    case '6':
-      p_to_i(b_i_s);
-      break;
     case 'B':
       if ( inMenu ) {
-        if ( menu_posi == 1 ) {
-          startValue = String(strValue).toFloat();
-          lcd.setCursor(7,1);
+        if ( menu_posi == 0 ) {
+          lcd.setCursor(4,1);
           lcd.write('*');
           lcd.noCursor();
           lcd.noBlink();
         }
-        if ( menu_posi == 3 ) {
-          finalValue = String(strValue).toFloat();
-          lcd.setCursor(7,1);
-          lcd.write('*');
-          lcd.noCursor();
-          lcd.noBlink();
-        }
-        if ( menu_posi == 5 ) {
+//------------------------------ сброс к исходным значениям до начала измерения -------------
+        if ( menu_posi == 2 ) {
           pulseCount = 0;
-          startValue = 0;
-          finalValue = 0;
+          startCount = 0;
           byte j = 0;
           do {
             pulseMass[j] = 0;
             j++ ;
           } while ( j < SMOOTH_LENGTH );
+          totalValue = 0.1;
           lcd.setCursor(0,1);
           lcd.print("Yes");
         }
+//--------------------------------------------------------------------------------------------
       }
       preRunStr();
       break;
@@ -182,18 +180,6 @@ byte b_i_s = (byte) smbl & B00001111;
       menuReturn();
       single_tag = false;
       reDraw = ! reDraw;
-      if ( menu_posi == 2 ) {
-        detachInterrupt(0);
-      }
-      if ( menu_posi == 1 || menu_posi == 3 ) {
-        lcd.noCursor();
-        lcd.noBlink();
-      }
-      break;
-    case '#':
-      if ( menu_posi == 2 ) {
-        detachInterrupt(0);
-      }
       break;
     default:
       break;
@@ -201,16 +187,20 @@ byte b_i_s = (byte) smbl & B00001111;
 }
 
 //----------------- настройка конфигурации счётчика --------
-void do_config() {
+void do_volume_config() {
   if ( ! single_tag ) {
     lcd.setCursor(0,0);
-    lcd.print(pulseWeight[0]);
+    lcd.print(volumeConfig[0]);
     lcd.setCursor(0,1);
-    lcd.print(strPulse);
-    lcd.setCursor(8,1);
-    lcd.print(pulseWeight[1]);
+    lcd.print( String ( totalValue * 1000 , 0) );
+    lcd.setCursor(6,1);
+    lcd.print(volumeConfig[1]);
     single_tag = true;
   }
+  lcd.setCursor(0,1);
+  lcd.print( "    " );
+  lcd.setCursor(0,1);
+  lcd.print( String ( totalValue * 1000 , 0) );
 }
 
 //----------------------- отображение подсчёта импульсов ----------
@@ -230,6 +220,16 @@ byte i = 0;
     lcd.setCursor(7,1);
     lcd.print(workMenu[1]);
     single_tag = true;
+  }
+  if ( startCount == 2 ) {
+    lcd.setCursor(15,0);
+    lcd.write('*');
+  }
+  if ( startCount == 3 ) {
+    single_tag = false;
+    lcd.clear();
+    menu_posi = 1;
+    do_calculate();
   }
   if ( reDraw ) {
     pulseMass[ smoothDelay ] = pulsePerSecond;
@@ -262,72 +262,20 @@ byte i = 0;
   }
 }
 
-//-------------------- ввод начального показания счётчика -----------
-void do_preData() {
-  if ( ! single_tag ) {
-    smbl = 0x00;
-    lcd.setCursor(0,0);
-    lcd.print(preDataInput);
-    lcd.setCursor(0,1);
-    lcd.print( String ( startValue , 4 ) );
-    lcd.setCursor(0,1);
-    lcd.blink();
-    lcd.cursor();
-    single_tag = true;
-  }
-    input_data();
-}
-
-//-------------------- ввод данных с клавиатуры -----------
-void input_data() {
-static int powExp = 1;
-    if ( byte(smbl) >= 0x30 && byte(smbl) <= 0x39 ) {
-        strValue[1-powExp] = smbl;
-      lcd.write(smbl);
-      powExp--;
-      if ( powExp == 0 ) {
-        powExp--;
-      }
-      if ( powExp == -5 ) {
-        powExp = 1;
-      }
-      lcd.setCursor( byte(1 - powExp) , 1 );
-    }
-}
-
-//-------------------- ввод конечного показания счётчика -----------
-void do_postData() {
-  if ( ! single_tag ) {
-    smbl = 0x00;
-    lcd.setCursor(0,0);
-    lcd.print(postDataInput);
-    lcd.setCursor(0,1);
-    lcd.print( String ( finalValue , 4 ) );
-    lcd.setCursor(0,1);
-    lcd.blink();
-    lcd.cursor();
-    single_tag = true;
-  }
-    input_data();
-}
-
 //---------------------- вычисление результата --------------
 void do_calculate() {
 float resultVal = 0;
   if ( ! single_tag ) {
-    if ( pulseCount > 0 && startValue > 0 && finalValue > startValue ) {
-//      resultVal = finalValue - startValue ;
-      resultVal = ( ( ( finalValue - startValue ) / ( pulseCount * floatPulse ) ) - 1 ) * 100;
+    if ( pulseCount > 0 ) {
+      resultVal = ( ( totalValue / ( pulseCount * floatPulse ) ) - 1 ) * 100;
     }
     lcd.setCursor(0,0);
     lcd.print(resultData);
     lcd.setCursor(0,1);
     lcd.print( String ( resultVal , 4) );
-/*    lcd.print ( String(startValue,4) );
-    lcd.setCursor(0,1);
-    lcd.print ( String(finalValue,4) );*/
     single_tag = true;
   }
+  reDraw = false;
 }
 
 //------------------- сброс всех введённых показаний и вычислений ------------

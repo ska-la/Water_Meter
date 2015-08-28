@@ -28,6 +28,8 @@
 #define SER_IN 0
 #define SER_OUT 1
 
+#define CONTROL_BUTTON 8
+
 //---------------------- количество отсчётов для усреднения показаний скорости пролива ----------
 #define SMOOTH_LENGTH 5
 
@@ -48,20 +50,19 @@ extern kPad kp;
 extern volatile unsigned long pulseCount;
 extern volatile unsigned int pulsePerSecond;
 extern volatile boolean reDraw;
+extern volatile byte startCount;
 
-extern String pulseWeight[];
+extern String volumeConfig[];
 extern String workMenu[];
 
-extern String preDataInput;
-extern String postDataInput;
 extern String resultData;
 extern String clearAsk;
 
 extern float floatPulse;
 extern unsigned int pulseMass[];
 
-extern float startValue;
-extern float finalValue;
+extern float totalValue;
+extern float deltaValue;
 
 extern char strPulse[];
 extern char strValue[];
@@ -90,13 +91,9 @@ void menuReturn(void);
 
 void input_sel(void);
 
-void do_config(void);
+void do_volume_config(void);
 
 void do_count(void);
-
-void do_preData(void);
-
-void do_postData(void);
 
 void do_calculate(void);
 

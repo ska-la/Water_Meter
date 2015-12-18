@@ -28,10 +28,15 @@
 #define SER_IN 0
 #define SER_OUT 1
 
-#define CONTROL_BUTTON 8
+/*----------------------- куда подключается литромер ---*/
+#define MONITOR_PIN 2
+/*----------------------- куда подключается кнопка старт\стоп отсчёта жидкости ---*/
+#define CONTROL_BUTTON 3
 
 //---------------------- количество отсчётов для усреднения показаний скорости пролива ----------
 #define SMOOTH_LENGTH 5
+
+#define DELAY_AMOUNT 1000        //------- задержка в 1 секунду ---------
 
 extern LiquidCrystal_I2C lcd;
 extern int nMenu;

@@ -10,25 +10,36 @@
 
 LiquidCrystal_I2C lcd(LCD_PORT,SCREEN_WIDTH,SCREEN_HEIGHT);  // set the LCD address, chars and lines
 
-#define PAD_ROWS      4
+//#define PAD_ROWS      4
+#define PAD_ROWS      1
 #define PAD_COLS      4
 
-char sChart[PAD_ROWS][PAD_COLS] = {
+/*char sChart[PAD_ROWS][PAD_COLS] = {
   {'1','2','3','A'},
   {'4','5','6','B'},
   {'7','8','9','C'},
   {'*','0','#','D'}
-};
+};*/
 
-#define KPAD_I2C_ADDR 0x23                          //--- I2C адрес клавиатуры ---
+char sChart[4] = {'A','B','C','D'};
 
-kPad kp = kPad((char *) sChart,PAD_ROWS,PAD_COLS);
+//#define KPAD_I2C_ADDR 0x23                          //--- I2C адрес клавиатуры ---
+
+#define PAD_IN1  5
+#define PAD_OUT1  8
+#define PAD_OUT2  9
+#define PAD_OUT3  6
+#define PAD_OUT4  7
+
+//kPad kp = kPad((char *) sChart,PAD_ROWS,PAD_COLS);
+byte padPinIn[] = {PAD_IN1};
+byte padPinOut[] = {PAD_OUT1,PAD_OUT2,PAD_OUT3,PAD_OUT4};
+
+kPad kp = kPad((char *) sChart,padPinIn,padPinOut,PAD_ROWS,PAD_COLS);
 
 //--- пункты меню ---
 const prog_char iMenu1[] PROGMEM = {" 1.VOLUME CONFIG"};
 const prog_char iMenu2[] PROGMEM = {" 2.WORK"};
-/*const prog_char iMenu3[] PROGMEM = {" 3.CALCULATE"};
-const prog_char iMenu4[] PROGMEM = {" 4.RESET"};*/
 const prog_char iMenu3[] PROGMEM = {" 3.RESET"};
 
 //--- подменю (состоят из пунктов меню) ---
@@ -36,7 +47,6 @@ const prog_char *sMenu1[] PROGMEM = {
   iMenu1,
   iMenu2,
   iMenu3
-//  iMenu4
 };
 
 //int nMenu = 4;               //---------- количество пунктов меню
@@ -97,16 +107,17 @@ volatile boolean reDraw = false;
 //------------------------------- пора вычислить отклонение ----------
 volatile byte startCount = 0;
 
-#define DELAY_AMOUNT 1000        //------- задержка в 1 секунду ---------
 unsigned long startDelay = 0;
 
 void setup() {
-  kp.init(KPAD_I2C_ADDR);
+//  kp.init(KPAD_I2C_ADDR);
+  kp.init();
   lcd.init();
   vbuff_init();
   menu_init(menu_posi);
   pinMode( SER_IN, INPUT );
   pinMode( SER_OUT, OUTPUT );
+  pinMode( MONITOR_PIN, INPUT_PULLUP );
   pinMode( CONTROL_BUTTON, INPUT_PULLUP );
 //-------------------------------------------- прерывание от водомера на INT1 ------
 //  attachInterrupt(1,meter_interrupt,FALLING);

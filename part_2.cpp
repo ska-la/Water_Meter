@@ -272,7 +272,7 @@ float resultVal = 0;
     lcd.setCursor(0,0);
     lcd.print(resultData);
     lcd.setCursor(0,1);
-    lcd.print( String ( resultVal , 4) );
+    lcd.print( String ( -resultVal , 4) );
     single_tag = true;
   }
   reDraw = false;

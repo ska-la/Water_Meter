@@ -34,7 +34,7 @@
 #define CONTROL_BUTTON 3
 
 //---------------------- количество отсчётов для усреднения показаний скорости пролива ----------
-#define SMOOTH_LENGTH 5
+#define SMOOTH_LENGTH 15
 
 #define DELAY_AMOUNT 1000        //------- задержка в 1 секунду ---------
 

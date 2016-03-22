@@ -234,14 +234,14 @@ byte i = 0;
   if ( reDraw ) {
     pulseMass[ smoothDelay ] = pulsePerSecond;
     smoothDelay++ ;
-    if ( smoothDelay == SMOOTH_LENGTH ) {;
+    if ( smoothDelay == SMOOTH_LENGTH ) {
       smoothDelay = 0;
     }
     do {
       averagePulses += pulseMass[i];
       i++;
     } while ( i < SMOOTH_LENGTH );
-    averagePulses /= 5 ;
+    averagePulses /= SMOOTH_LENGTH ;
     lcd.setCursor(0,0);
 //------------------------ в кубометрах -------------
 //    lcd.print( String( pulsePerSecond * 0.001, 3) );
